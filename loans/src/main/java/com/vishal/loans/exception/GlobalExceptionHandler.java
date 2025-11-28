@@ -10,8 +10,10 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -39,7 +41,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception exception,
                                                                   WebRequest webRequest) {
         ErrorResponseDto errorResponseDTO = new ErrorResponseDto(
-                webRequest.getDescription(false),
+                getOnlyUriFromWebRequest(webRequest),
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 exception.getMessage(),
                 LocalDateTime.now()
@@ -51,7 +53,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleResourceNotFoundException(ResourceNotFoundException exception,
                                                                             WebRequest webRequest) {
         ErrorResponseDto errorResponseDTO = new ErrorResponseDto(
-                webRequest.getDescription(false),
+                getOnlyUriFromWebRequest(webRequest),
                 HttpStatus.NOT_FOUND,
                 exception.getMessage(),
                 LocalDateTime.now()
@@ -63,7 +65,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleLoanAlreadyExistsException(LoanAlreadyExistsException exception,
                                                                              WebRequest webRequest){
         ErrorResponseDto errorResponseDTO = new ErrorResponseDto(
-                webRequest.getDescription(false),
+                getOnlyUriFromWebRequest(webRequest),
                 HttpStatus.BAD_REQUEST,
                 exception.getMessage(),
                 LocalDateTime.now()
@@ -71,4 +73,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }
 
+	private String getOnlyUriFromWebRequest(WebRequest webRequest){
+		String requestURI = ((ServletWebRequest) webRequest).getRequest().getRequestURI();
+		return HtmlUtils.htmlEscape(requestURI);
+	}
 }

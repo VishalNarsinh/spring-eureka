@@ -1,7 +1,6 @@
 package com.vishal.accounts.exception;
 
 import com.vishal.accounts.dto.ErrorResponseDto;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -12,8 +11,10 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -39,40 +40,40 @@ public class GlobalExceptionalHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception exception, WebRequest webRequest) {
-		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(webRequest.getDescription(false), HttpStatus.INTERNAL_SERVER_ERROR,
+		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(getOnlyUriFromWebRequest(webRequest), HttpStatus.INTERNAL_SERVER_ERROR,
 				exception.getMessage(), LocalDateTime.now());
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@ExceptionHandler(ResourceNotFoundException.class)
 	public ResponseEntity<ErrorResponseDto> handleResourceNotFoundException(ResourceNotFoundException exception, WebRequest webRequest) {
-		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(webRequest.getDescription(false), HttpStatus.NOT_FOUND, exception.getMessage(),
+		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(getOnlyUriFromWebRequest(webRequest), HttpStatus.NOT_FOUND, exception.getMessage(),
 				LocalDateTime.now());
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.NOT_FOUND);
 	}
 
 	@ExceptionHandler(CustomerAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponseDto> handleCustomerAlreadyExistsException(CustomerAlreadyExistsException exception, WebRequest webRequest) {
-		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(webRequest.getDescription(false), HttpStatus.BAD_REQUEST, exception.getMessage(),
+		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(getOnlyUriFromWebRequest(webRequest), HttpStatus.BAD_REQUEST, exception.getMessage(),
 				LocalDateTime.now());
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(DuplicateMobileNumberException.class)
 	public ResponseEntity<ErrorResponseDto> handleDuplicateMobileNumberException(DuplicateMobileNumberException exception, WebRequest webRequest) {
-		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(webRequest.getDescription(false), HttpStatus.CONFLICT, exception.getMessage(),
+		ErrorResponseDto errorResponseDTO = new ErrorResponseDto(getOnlyUriFromWebRequest(webRequest), HttpStatus.CONFLICT, exception.getMessage(),
 				LocalDateTime.now());
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.CONFLICT);
 	}
 
 	@ExceptionHandler(DataIntegrityViolationException.class)
-	public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(DataIntegrityViolationException ex, HttpServletRequest request) {
+	public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(DataIntegrityViolationException ex, WebRequest webRequest) {
 		String dbMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
 
 		ConstraintViolation violation = ConstraintViolation.fromMessage(dbMessage);
 		String message = ConstraintViolation.resolveFriendlyMessage(dbMessage);
 
-		ErrorResponseDto errorResponse = new ErrorResponseDto("uri=" + request.getRequestURI(), violation.getStatus(), message, LocalDateTime.now());
+		ErrorResponseDto errorResponse = new ErrorResponseDto("uri=" + getOnlyUriFromWebRequest(webRequest), violation.getStatus(), message, LocalDateTime.now());
 
 		return new ResponseEntity<>(errorResponse, violation.getStatus());
 	}
@@ -92,15 +93,8 @@ public class GlobalExceptionalHandler extends ResponseEntityExceptionHandler {
 		return message;
 	}
 
-//    @ExceptionHandler(NoResourceFoundException.class)
-//    public ResponseEntity<ErrorResponseDto> handleNoResourceFoundException(NoResourceFoundException exception,
-//                                                                            WebRequest webRequest) {
-//        ErrorResponseDto errorResponseDTO = new ErrorResponseDto(
-//                webRequest.getDescription(false),
-//                HttpStatus.NOT_FOUND,
-//                exception.getMessage(),
-//                LocalDateTime.now()
-//        );
-//        return new ResponseEntity<>(errorResponseDTO, HttpStatus.NOT_FOUND);
-//    }
+	private String getOnlyUriFromWebRequest(WebRequest webRequest){
+		String requestURI = ((ServletWebRequest) webRequest).getRequest().getRequestURI();
+		return HtmlUtils.htmlEscape(requestURI);
+	}
 }
