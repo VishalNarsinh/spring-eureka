@@ -19,9 +19,6 @@ services:
     container_name: "eurekaserver-ms" # eurekaserver-microservice
     ports:
       - "8070:8070"
-    depends_on:
-      configserver:
-        condition: service_healthy
     healthcheck:
       test: "curl -f http://localhost:8070/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
@@ -30,7 +27,7 @@ services:
       start_period: 10s
     extends:
       file: common-config.yml
-      service: microservice-base-config
+      service: microservice-configserver-config
     environment:
       SPRING_APPLICATION_NAME: "eurekaserver"
 
@@ -43,7 +40,7 @@ services:
       SPRING_APPLICATION_NAME: "accounts"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
   loans:
     image: "vishalnarsinh/loans:s8"
@@ -54,7 +51,7 @@ services:
       SPRING_APPLICATION_NAME: "loans"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
   cards:
     image: "vishalnarsinh/cards:s8"
@@ -65,7 +62,7 @@ services:
       SPRING_APPLICATION_NAME: "cards"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
 networks:
   vishalnarsinh:
